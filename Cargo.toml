@@ -1,0 +1,7 @@
+[package]
+name = "reme"
+version = "0.1.0"
+authors = ["Alex Martin <martinak0@protonmail.com>"]
+edition = "2018"
+
+[dependencies]
