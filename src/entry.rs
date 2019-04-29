@@ -2,39 +2,43 @@
  * Struct representation of a reme event and related fucntions
  */
 
-// for time mgmt 
-use datetime::{LocalDateTime, LocalTime, OffsetDateTime};
-// for converting messages to events
-use discord::model::Message;
+// for time mgmt
+use datetime::{FixedOffset, LocalDateTime, LocalTime, OffsetDateTime};
+// for converting handeling discord messages
+use discord::model::{Attachment, Message, User};
 // for message parsing
-use regex::Regex;
+use regex::{Captures, Match, Regex};
 
-// message regex - will move when I have a place for it
-static message_regex: Regex = Regex::new(
-   r"^!reme (?<msg>.*) @ (((?<month>[0-12])[-\/](?<day>[0-31]) (?<day_offset>[0-9]+)|(?<day_offset_unit>[HhMmSs]))|((?<offset>[0-9]+)(?<unit>[HhMmSs])))"
-);
 
-/* TODO 
+/* TODO
  * Add ability to send attachments
  * All the creation of reminders for multiple users
- * Encrypt messages before putting them in db? 
+ * Encrypt messages before putting them in db?
  * Figure out how to support chron reminders
  */
 
-/// A struct representing an event. This sctruct is converted SQL and inserted
+ pub enum Unit {
+     Day(str),
+     Hour(str),
+     Minute(str)
+ }
+
+/// A struct representing an event. This sctruct is inserted
 /// into the database.
 #[derive(DEBUG)]
-struct Entry {
+pub struct Entry {
     /// Unique id for the database
     id: Option<i64, None>,
     /// User that created the event
-    user: String,
+    users: Option<Vec<User>>,
     /// The message sent to the user at exec_time
-    msg: String,
+    msg: Option<String>,
+    /// Message attachments
+    attachments: Option<Vec<Attachment>>,
     /// When the even was created
-    created: LocalDateTime 
+    created: DateTime<FixedOffset>,
     /// When the reminder message should be sent
-    exececuted: LocalDateTime,
+    exececuted: DateTime<FixedOffset>,
 }
 
 
@@ -42,36 +46,50 @@ struct Entry {
 impl Entry {
     /// Creates a new empty event
     fn new () -> Option<Entry, None> {
-        let current_time: LocalDateTime = LocalDateTime::now() ;
 
         Some(
             Entry {
                 id: None,
-                user: "Fake_User",
+                users: None,
                 msg: "This is a test message.",
-                created_time: current_time;
-                executed: current_time.checked_add(5)
+                attachments: None,
+                created: LocalDateTime::now(),
+                executed: LocalDateTime::now()
             }
         )
     }
 
     /// Creates an event from a string
     fn from_message (input: &Message) -> Option<Entry, None> {
-        if ()
-        Some (
-            Entry {
-                id: None,
-                user: input.author,
-                msg: input.content,
-                created: LocalDateTime::now(),
-                executed: LocalDateTime::hms(_,_,_)
-            }
-        )
+        Some()
     }
 
-    /// Convert time from message to a LocalDateTime 
+    /// Convert time from message to a LocalDateTime
     fn convert_time (date: String, time: String) -> Option<LocalDateTime, None> {
         Some()
+    }
+
+    /// Parse a message with a regex for the user message and the execution time
+    fn parse_content (msg: String) -> Option<((String, LocalDateTime))> {
+        /*
+         Example: !reme Take pizza out of the oven 4:30 (works)
+                  !reme Take pizza out of the oven + 45m (works)
+                  !reme DND Tonight! @ 5/22 17:00 (broken)
+        */
+        lazy_static {
+            let msg_regex: Regex =
+                Regex::new(
+                    "^!reme (?<message>.*) (((@[ ]{0,1}(?<time>[0-24]:[0-59])))|(\+[ ]{0,1}(?<offset>\d+[DdHhMm])))"
+                ).unwrap();
+        }
+
+        let groups = msg_regex.captures(msg).unwrap();
+
+        let msg = groups.name("message").as_str();
+        let date = groups.name("date").as_str();
+        let offset = groups.name("offset").as_str();
+
+        }
     }
 }
 
