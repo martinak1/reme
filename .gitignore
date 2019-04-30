@@ -1,4 +1,8 @@
-/target
-**/*.rs.bk
+bin/*
+include/*
+lib/*
+lib64/*
+pyvenv.cfg
+*.db
 client.id
 client.secret
