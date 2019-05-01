@@ -1,7 +1,8 @@
 #!/usr/bin/python3
 
 from datetime import datetime, timedelta
-from discord import Message, User
+from discord import Members, Message, User
+import logging
 import re
 
 """
@@ -45,12 +46,76 @@ class Entry:
         executed = None
     # end __init__
 
+
+    """
+    Return id
+    """
+    def id(self):
+        return self.id
+    # end id
+
+
+    """
+    Return msg
+    """
+    def msg(self):
+        return self.msg
+    # end msg
+
+
+    """
+    Return users
+    """
+    def users(self):
+        return self.users
+    # end users
+
+
+    """
+    Return users flattened
+    """
+    def flatten_users(self):
+        pass
+
+
+    """
+    Return attachments
+    """
+    def attachments(self):
+        return self.attachments
+    # end attachments
+
+
+    """
+    Return attachments flattened
+    """
+    def flatten_attachments(self):
+        pass
+
+
+    """
+    Return created
+    """
+    def created(self):
+        return self.created
+    # end created
+
+
+    """
+    Return exectuted
+    """
+    def executed(self):
+        return self.executed
+    # end executed
+
+
     """
     Create an Entry object from the results of a database query
     """
     def from_db(self):
         pass
     # end from_db
+
 
     """
     Sets the Entry attributes of the entry by collecting information
@@ -66,8 +131,10 @@ class Entry:
             self.created = message.created_at
             self.executed = convert_date(matches)
 
+            logging.info("entry.py:from_msg - Entry created from message successfully")
+            return True
 
-            return (True, "Entry created from message successfully")
         else:
-            return (False, "Message does not match the required format")
+            logging.warning("entry.py:from_msg - Message does not match the required format")
+            return False
     # end from_msg
