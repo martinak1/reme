@@ -43,7 +43,6 @@ class Entry:
         """.format(self.uid, self.msg, self.users, self.attachments,
                    self.created, self.executed)
 
-
     def uid(self) -> int:
         """
         Return uid
@@ -141,20 +140,24 @@ def convert_date(matches: re.Match) -> datetime:
     """
     converted_date = datetime.toady()
     if matches.group('month'):
-        converted_date.replace(month=matches.group('month'))
-        converted_date.replace(day=matches.group('day'))
+        converted_date = converted_date.replace(month=matches.group('month'))
+        converted_date = converted_date.replace(day=matches.group('day'))
 
     if matches.group('hour'):
-        converted_date.replace(hour=matches.group('hour'))
-        converted_date.replace(minute=matches.group('min'))
+        converted_date = converted_date.replace(hour=matches.group('hour'))
+        converted_date = converted_date.replace(minute=matches.group('min'))
 
     if matches.group('offset'):
+        # Match the given offset unit and adjust the time
         if re.match(r'[Dd]{1}', matches.group('offset')[:1]):
             converted_date += timedelta(days=matches.group('offset')[:-1])
         if re.match(r'[Hh]{1}', matches.group('offset')[:1]):
             converted_date += timedelta(hours=matches.group('offset')[:-1])
         if re.match(r'[Mm]{1}', matches.group('offset')[:1]):
             converted_date += timedelta(minutes=matches.group('offset')[:-1])
+
+    # floor to the given minute
+    converted_date = converted_date.replace(second=0, microsecond=0)
 
     return converted_date
 
