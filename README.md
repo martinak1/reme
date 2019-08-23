@@ -1,5 +1,6 @@
 # reme
-A discord bot that reminds you of things. 
+
+A discord bot that sends automated messages. 
 
 ## Example
 

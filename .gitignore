@@ -4,5 +4,7 @@ lib/*
 lib64/*
 pyvenv.cfg
 *.db
-client.id
-client.secret
+*token*
+reme/src/__pycache__/*
+reme/src/discord
+.vscode/*

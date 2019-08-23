@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 """
 Entry - An intermediary object used to pass information between reme and the
 DB. Entry objects can be composed from either output from the DB or from a
@@ -19,15 +20,15 @@ class Entry:
     """
 
     msg_regex = re.compile(
-        r"!reme[ ]*(?P<message>.*)[ ]*((@[ ]*(?P<day>\d{1,2}[-\/]\d{1,2}){0,1}[ ]*(?P<time>\d{1,2}:\d{1,2}))|(?P<offset>\+[ ]*\d+[ ]*[DdHhMm]))"
+        r"!reme[ ]*(?P<message>.*)[ ]*((@[ ]*(?P<month>\d{1,2})[-\/](?P<day>\d{1,2}){0,1})[ ]*(?P<hour>\d{1,2}):(?P<min>\d{1,2})|\+(?P<offset>[ ]*\d+[ ]*[DdHhMm]))"
     )
 
-    def __init__(self, uid=None, msg="", users=None, attachments=None,
-                 created=None, executed=None):
+    def __init__(self, uid=None, msg="", users=None, channel=None, created=None, 
+                executed=None):
         self.uid = uid
         self.msg = msg
         self.users = users
-        self.attachments = attachments
+        self.channel = channel
         self.created = created
         self.executed = executed
     # end __init__
@@ -37,69 +38,14 @@ class Entry:
         uid:            {}
         msg:            {}
         users:          {}
-        attachments:    {}
+        channel:        {}
         created:        {}
         executed:       {}
-        """.format(self.uid, self.msg, self.users, self.attachments,
-                   self.created, self.executed)
-
-    def uid(self) -> int:
-        """
-        Return uid
-        """
-        return self.uid
-    # end uid
-
-    def msg(self):
-        """
-        Return msg
-        """
-        return self.msg
-    # end msg
-
-    def users(self) -> list:
-        """
-        Return users
-        :return list(discord.Users)
-        """
-        return self.users
-    # end users
-
-    def flatten_users(self) -> list:
-        """
-        Return users flattened
-        """
-        pass
-
-    def attachments(self) -> list:
-        """
-        Return attachments
-        """
-        return self.attachments
-    # end attachments
-
-    def flatten_attachments(self) -> list:
-        """
-        Return attachments flattened
-        """
-        pass
-
-    def created(self) -> datetime:
-        """
-        Return created
-        """
-        return self.created
-    # end created
-
-    def executed(self) -> datetime:
-        """
-        Return exectuted
-        """
-        return self.executed
-    # end executed
+        """.format(self.uid, self.msg, self.users, self.channel, self.created, self.executed)
+    # end __str__
 
 
-def from_msg(message: Message) -> bool:
+def from_msg(message: Message) -> Entry:
     """
     Sets the Entry attributes of the entry by collecting information
     from a message
@@ -112,9 +58,9 @@ def from_msg(message: Message) -> bool:
 
     if matches:
         ent.msg = matches.group('message')
-        ent.users = message.author + message.mentions
-        ent.attachments = message.attachments
-        ent.created = message.created_at
+        ent.users = message.mentions
+        ent.channel = message.channel
+        ent.created = datetime.now()
         ent.executed = convert_date(matches)
 
         logging.info(
@@ -138,23 +84,25 @@ def convert_date(matches: re.Match) -> datetime:
     :return datetime.datetime: Datetime object composed with the catpure groups
     present
     """
-    converted_date = datetime.toady()
+    converted_date: datetime = datetime.today()
     if matches.group('month'):
-        converted_date = converted_date.replace(month=matches.group('month'))
-        converted_date = converted_date.replace(day=matches.group('day'))
+        converted_date = converted_date.replace(month=int(matches.group('month')))
+        converted_date = converted_date.replace(day=int(matches.group('day')))
 
     if matches.group('hour'):
-        converted_date = converted_date.replace(hour=matches.group('hour'))
-        converted_date = converted_date.replace(minute=matches.group('min'))
+        converted_date = converted_date.replace(hour=int(matches.group('hour')))
+        converted_date = converted_date.replace(minute=int(matches.group('min')))
 
+    # TODO: Fix this; seems to convert everything to minutes instead of respecting
+    #       day||hour indicator
     if matches.group('offset'):
         # Match the given offset unit and adjust the time
-        if re.match(r'[Dd]{1}', matches.group('offset')[:1]):
-            converted_date += timedelta(days=matches.group('offset')[:-1])
-        if re.match(r'[Hh]{1}', matches.group('offset')[:1]):
-            converted_date += timedelta(hours=matches.group('offset')[:-1])
-        if re.match(r'[Mm]{1}', matches.group('offset')[:1]):
-            converted_date += timedelta(minutes=matches.group('offset')[:-1])
+        if re.match(r'\d+[Dd]{1}', matches.group('offset')):
+            converted_date += timedelta(days=int(matches.group('offset')[:-1]))
+        if re.match(r'\d+[Hh]{1}', matches.group('offset')):
+            converted_date += timedelta(hours=int(matches.group('offset')[:-1]))
+        if re.match(r'\d+[Mm]{1}', matches.group('offset')):
+            converted_date += timedelta(minutes=int(matches.group('offset')[:-1]))
 
     # floor to the given minute
     converted_date = converted_date.replace(second=0, microsecond=0)
@@ -177,7 +125,7 @@ def from_db(sql_output: tuple) -> Entry:
         uid=sql_output[0],
         msg=sql_output[1],
         users=sql_output[2],
-        attachments=sql_output[3],
+        channel=sql_output[3],
         created=sql_output[4],
         executed=sql_output[5]
     )
