@@ -35,12 +35,12 @@ class Entry:
 
     def __str__(self):
         return """
-        uid:            {}
-        msg:            {}
-        users:          {}
-        channel:        {}
-        created:        {}
-        executed:       {}
+        uid     : {}
+        msg     : {}
+        users   : {}
+        channel : {}
+        created : {}
+        executed: {}
         """.format(self.uid, self.msg, self.users, self.channel, self.created, self.executed)
     # end __str__
 
