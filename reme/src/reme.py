@@ -1,4 +1,5 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
+
 """
 reme.py
 A Discord bot that reminds you of things.

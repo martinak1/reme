@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 """
 Entry - An intermediary object used to pass information between reme and the
 DB. Entry objects can be composed from either output from the DB or from a

@@ -48,7 +48,7 @@ Temporary Items
 
 ### Python ###
 # Byte-compiled / optimized / DLL files
-__pycache__/
+reme/src/__pycache__/
 *.py[cod]
 *$py.class
 
@@ -205,3 +205,6 @@ $RECYCLE.BIN/
 
 # Custom rules (everything added below won't be overriden by 'Generate .gitignore File' if you use 'Update' option)
 
+# Reme specific files
+*.id
+*.db

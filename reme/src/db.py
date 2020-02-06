@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 """
 DB.py
 This handels the interaction between reme and the database. It can convert
