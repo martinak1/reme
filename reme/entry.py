@@ -35,16 +35,17 @@ class Entry:
 
     def __str__(self):
         return """
-        uid     : {}
-        msg     : {}
-        users   : {}
-        channel : {}
-        created : {}
-        executed: {}
+        uid         : {}
+        msg         : {}
+        users       : {}
+        channel     : {}
+        created     : {}
+        executed    : {}
         """.format(self.uid, self.msg, self.users, self.channel, self.created, self.executed)
     # end __str__
 
 
+#TODO add support for adding mentions, so they will be alerted as well
 def from_msg(message: Message) -> Entry:
     """
     Sets the Entry attributes of the entry by collecting information
@@ -58,7 +59,7 @@ def from_msg(message: Message) -> Entry:
 
     if matches:
         ent.msg = matches.group('message')
-        ent.users = message.mentions
+        ent.users = message.author.name #.join(message.mentions)
         ent.channel = message.channel
         ent.created = datetime.now()
         ent.executed = convert_date(matches)

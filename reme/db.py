@@ -83,11 +83,13 @@ class DB:
         try:
             self.connection.execute(
                 """
-                INSERT INTO entries(msg, users, attachments, created, executed)
-                VALUES(?, ?, ?, ?, ?);
+                INSERT INTO entries(msg, users, created, executed)
+                VALUES(?, ?, ?, ?);
                 """,
                 (entry.msg, entry.users, entry.created, entry.executed)
             )
+            self.connection.commit()
+
         except sqlite3.Warning:
             logging.error("db.py:add_entry - Failed to add an entry to the DB")
             return False

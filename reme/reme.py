@@ -97,6 +97,11 @@ class Reme(discord.Client):
     
     # end check_entries
 
+    def set_db(self):
+        """
+        Initialize a connection to the database
+        """
+        self.db = DB()
 
     def set_token(self):       
         #Token filelocation
@@ -187,13 +192,5 @@ class Reme(discord.Client):
                         ent.executed
                     )
                 )
-
-    def __init__(self): 
-        # initialize the DB
-        self.db = DB()
-        logging.info("reme.py:__init__ - Connection to the database has been established")
-        self.set_token()
-
-    # end __init__
 
 # end Reme class
