@@ -8,7 +8,7 @@ Entry objects to SQL statements and vice versa.
 import sqlite3
 import logging
 from datetime import datetime, timedelta
-from entry import Entry
+from entry import Entry, from_db
 # import threading
 # import time
 
@@ -121,12 +121,12 @@ class DB:
 
         return True
 
-    def collect(self, timestamp: datetime):
+    def collect(self, timestamp: datetime) -> list:
         """
         Collects the entries from the DB
         :param timestamp datetime.datetime: A datetime to compare against the
         executed column
-        :return collection list: The DB entries that match the given datetime
+        :return list - The DB entries that match the given datetime
         """
         logging.info(
             "db.py:collect - Collecting entries from the DB \

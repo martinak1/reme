@@ -31,7 +31,9 @@ class Entry:
         self.channel = channel
         self.created = created
         self.executed = executed
+
     # end __init__
+
 
     def __str__(self):
         return """
@@ -42,7 +44,10 @@ class Entry:
         created     : {}
         executed    : {}
         """.format(self.uid, self.msg, self.users, self.channel, self.created, self.executed)
+
     # end __str__
+
+# end Entry
 
 
 #TODO add support for adding mentions, so they will be alerted as well
@@ -59,10 +64,12 @@ def from_msg(message: Message) -> Entry:
 
     if matches:
         ent.msg = matches.group('message')
-        ent.users = message.author.name #.join(message.mentions)
+        ent.users = users_to_string(message) 
         ent.channel = message.channel
         ent.created = datetime.now()
         ent.executed = convert_date(matches)
+
+        print(message.author.id)
 
         logging.info(
             "entry.py:from_msg - Entry created from message successfully"
@@ -73,7 +80,8 @@ def from_msg(message: Message) -> Entry:
         "entry.py:from_msg - Message does not match the required format"
     )
     return None
-    # end from_msg
+
+# end from_msg
 
 
 def convert_date(matches: re.Match) -> datetime:
@@ -110,6 +118,8 @@ def convert_date(matches: re.Match) -> datetime:
 
     return converted_date
 
+# end convert_date
+
 
 def from_db(sql_output: tuple) -> Entry:
     """
@@ -117,7 +127,7 @@ def from_db(sql_output: tuple) -> Entry:
     :param sql_output tuple - A tuple representation of a row in the DB
     :return Entry or None
     """
-    logging.info(
+    logging.debug(
         "entry.py:from_db - Attempting to create an Entry object from DB \
         output row={}".format(sql_output[0])
     )
@@ -130,3 +140,48 @@ def from_db(sql_output: tuple) -> Entry:
         created=sql_output[4],
         executed=sql_output[5]
     )
+
+# end from_db
+
+
+# TODO might not need to do this; use user = client.get_user(<USER_ID>) to get the user then send them 
+#   the message: https://discordpy.readthedocs.io/en/latest/faq.html#how-do-i-send-a-dm
+#   user.send(msg)
+def to_msg(ent: Entry) -> Message:
+    """
+    Converts an entry object back into a Discord Message object
+    :param Entry
+    :return discord.Message
+    """
+    pass
+
+# end to_msg
+
+
+#TODO Figure out how to handle when @everyone is mentioned
+def users_to_string(message: Message) -> str:
+    """
+    Collects the message author and mentioned user's ids and combines them into a csv string
+    :param message: discord.Message
+    :return str
+    """
+    users: str = "{}".format(message.author.id)
+
+    for m in message.mentions:
+        users += ",{}".format(m.id)
+
+    logging.info("entry:users_to_string - Users string generated {}".format(users))
+    return users
+
+# end users_to_string
+
+
+def users_from_string(user_string: str) -> list:
+    """
+    Converts a csv string into a list of discord users ids
+    :param user_string: str
+    :return list
+    """
+    return list(map(int, user_string.split(',')))
+
+# end users_from_string

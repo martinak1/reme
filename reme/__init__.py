@@ -17,6 +17,14 @@ def main():
         bot.set_db()
         bot.run(bot.token)
 
+        # TODO fill out the logic
+        while True:
+            entries: list = bot.get_entries()
+
+            for e in entries:
+                pass
+                #msg: discord.Message =
+
     except discord.errors.LoginFailure:
         logging.error(
             "__init__.py:main - Invalid token passed to discord client"

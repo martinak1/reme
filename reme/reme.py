@@ -17,6 +17,7 @@ import entry
 import logging
 import os
 import re
+from datetime import datetime
 
 class Reme(discord.Client):
     """
@@ -44,7 +45,7 @@ class Reme(discord.Client):
         **Source**: [GitHub](https://github.com/martinak1/reme)
         **License** [BSD-3-Clause](https://raw.githubusercontent.com/martinak1/reme/master/LICENSE)
 
-        **NOTE: Reme uses a 24 hour clock in order to simplify datetimes**
+        __**NOTE: Reme uses a 24 hour clock in order to simplify datetimes**__
 
         **Flags**
         ```css
@@ -74,28 +75,31 @@ class Reme(discord.Client):
 
     # end help
 
-    # TODO possibly delete
-    #def add_entry(ent: Entry, database: db.DB) -> bool:
-        """
-        A wrapper for db.add_entry
-        """
 
-        #database.add_entry(ent)
-
-    # end add_entry
-
-
-    async def check_entries(self):
+    def get_entries(self) -> list:
         """
-        Checks the DB for upcoming execution times and calls a function to send the reminders, if it is
-        the scheduled time. 
+        Checks the DB for upcoming execution times and returns a list of entries that need to be sent
+        :return Returns an array of entries
         """
-        while(True):
-            # TODO Add logic to check the db and add it to a queue.
-            #      Then send the reminders
-            await asyncio.sleep(60)
+        time = datetime.now().replace(second=0, microsecond=0)
+        logging.info("reme:get_entries - Collecting entries to be executed at {}".format(time))
+
     
     # end check_entries
+
+
+    def send_message(self, ids: list, msg: str):
+        """
+        Sends a message to a group of users
+        :param list
+        :param str
+        """
+        for id in ids:
+            user: discord.User = self.get_user(id)
+            user.send(msg)
+
+    # end send_message
+
 
     def set_db(self):
         """
