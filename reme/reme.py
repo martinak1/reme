@@ -20,7 +20,7 @@ import re
 
 class Reme(discord.Client):
     """
-    A wrapper class extending discord.client
+    A wrapper class extending discord.client that adds a database connection and stores the bot token
     """
 
     # Create the client object
@@ -34,44 +34,44 @@ class Reme(discord.Client):
 
     def help(self) -> str:
         """
-        Returns the help docstring
+        Returns the help docstring in discord markdown
         :return str
         """
     
         return """
-        # Reme - A Discord bot that will send you reminders
-        # Author: martinak1
-        # Source: https://github.com/martinak1/reme
-        # License: BSD-3-Clause
+        **Reme - A Discord bot that will send you reminders**
+        **Author**: martinak1
+        **Source**: [GitHub](https://github.com/martinak1/reme)
+        **License** [BSD-3-Clause](https://raw.githubusercontent.com/martinak1/reme/master/LICENSE)
 
-        NOTE: Reme uses a 24 hour clock in order to simplify datetimes
+        **NOTE: Reme uses a 24 hour clock in order to simplify datetimes**
 
-        [Flags]
-
+        **Flags**
+        ```css
         -d, debug - Reme echos what you send it after converting it to an Entry object
-        -h, help  - Prints this usage docstring
+        -h, help  - Prints this usage docstring```
 
-        [Formating]
-    
+        **Formating**
+        ```css
         !reme <Flag> <Message> @ mm/dd/yyyy hh:mm
         !reme <Flag> <Message> @ hh:mm
-        !reme <Flag> <Message> +<Delta>[DdHhMm]
+        !reme <Flag> <Message> +<Delta>[DdHhMm]```
 
-        [Examples]
-    
+        **Examples**
+        ```css
         Print this help docstring
             !reme -h || !reme help
 
         Send a reminder 30 minutes from now
             !reme Take the pizza out of the oven +30m
 
-        Send a reminder at 5:30 pm 
+        Send a reminder at 5:30 pm
             !reme Go grocery shopping @ 17:30
 
         Send a reminder on October 30th at 4:30 pm
-            !reme DND Session @ 10/30 16:30
-    
-        """
+            !reme DND Session @ 10/30 16:30```
+       """
+
     # end help
 
     # TODO possibly delete
@@ -179,7 +179,7 @@ class Reme(discord.Client):
                 )
         # Print the help docstring
         elif message.content.startswith('!reme -h') or message.content.startswith('!reme help'):
-            await message.channel.send("{}".format(help()))
+            await message.channel.send("{}".format(self.help()))
     
         # Commit to the DB
         else:

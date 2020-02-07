@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-DB.py
+db.py
 This handels the interaction between reme and the database. It can convert
 Entry objects to SQL statements and vice versa.
 """
