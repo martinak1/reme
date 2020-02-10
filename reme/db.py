@@ -69,8 +69,10 @@ class DB:
                     uid INTEGER PRIMARY KEY AUTOINCREMENT,
                     msg TEXT NOT NULL,
                     users TEXT NOT NULL,
+                    channel INTEGER NOT NULL,
                     created DATETIME,
-                    executed DATETIME NOT NULL
+                    executed DATETIME NOT NULL,
+                    everyone INTEGER NOT NULL
                 );
                 """
             )
@@ -97,18 +99,19 @@ class DB:
         try:
             self.connection.execute(
                 """
-                INSERT INTO entries(msg, users, created, executed)
-                VALUES(?, ?, ?, ?);
+                INSERT INTO entries(msg, users, channel, created, executed, everyone)
+                VALUES(?, ?, ?, ?, ?, ?);
                 """,
-                (entry.msg, entry.users, entry.created, entry.executed)
+                (entry.msg, entry.users, entry.channel, entry.created, entry.executed, entry.everyone)
             )
             self.connection.commit()
 
         except sqlite3.Warning as e:
-            logging.error("db.py:add_entry - Failed to add an entry to the DB | {}".format(e))
+            logging.error(f"db.py:add_entry - Failed to add an entry to the DB | {e}")
             return False
         except Exception as e:
-            logging.error("db.py:add_entry - An unknown error occured | {}".format(e))
+            logging.error(f"db.py:add_entry - An unknown error occurred | {e}")
+            return False
 
         logging.debug("db.py:add_entry - Added an entry to the DB")
         return True
@@ -153,39 +156,24 @@ class DB:
 
         sql: str = f"SELECT * FROM entries WHERE executed='{time}'"
         try:
-            # TODO it doesn't like datetimes or isofmt string; broken
-            entries: list = [from_db(row) for row in self.connection.execute(
-                sql
-            )]
-
-            logging.debug(
-                "db.py:collect - {} entries found with datetime {}".format(
-                    len(entries), time
-                )
-            )
-
+            entries: list = [from_db(row) for row in self.connection.execute(sql)]
+            logging.debug(f"db.py:collect - {len(entries)} entries found with datetime {time}")
             return entries
 
         except sqlite3.ProgrammingError as e:
-            logging.error(
-                "db.py:collect - There was an issue with the SQL statement | {}".format(e)
-            )
+            logging.error(f"db.py:collect - There was an issue with the SQL statement | {e}")
+            return []
 
         except sqlite3.DatabaseError as e:
-            logging.error(
-                "db.py:collect - There was an issue with the Database | {}".format(e)
-            )
+            logging.error(f"db.py:collect - There was an issue with the Database | {e}")
+            return []
 
         except sqlite3.Warning as e:
-            logging.error(
-                "db.py:collect - Failed to retrieve entries from the DB for \
-                    datetime {} | {}".format(time, e)
-            )
+            logging.error(f"db.py:collect - Failed to retrieve entries from the DB for datetime: {time} | {e}")
             return []
+
         except Exception as e:
-            logging.error(
-                "db.py:collect - An unknown error occured | {}".format(e)
-            )
+            logging.error(f"db.py:collect - An unknown error occurred | {e}")
             return []
 
     # end collect

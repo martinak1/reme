@@ -157,40 +157,37 @@ class Reme(discord.Client):
         await asyncio.sleep(5)
 
         while True:
-            logging.debug("reme.py:bootstrap - Starting reminder loop")
+            logging.debug("reme.py:reminder_loop - Starting reminder loop")
             entries: list = await self.get_entries(
                 datetime.now().replace(second=0, microsecond=0)
             )
-            logging.debug("reme.py:reminder_loop - Collected {} entries".format(len(entries)))
+            logging.debug(f"reme.py:reminder_loop - Collected {len(entries)} entries")
             to_delete: list = []
             tasks: list = []
 
             for e in entries:
                 logging.debug(
-                    "reme:main - Creating a task for entry with UID: {} \
-                        then pending it for deletion".format(e.uid)
+                    f"reme:reminder_loop - Creating a task for entry with UID: {e.uid} then pending it for deletion"
                 )
                 tasks.append(asyncio.create_task(self.send_reminders(e)))
                 to_delete.append(e.uid)
 
             logging.debug(
-                "reme:main - {} tasks created and {} entries pending deletion".format(
+                "reme:reminder_loop - {} tasks created and {} entries pending deletion".format(
                     len(tasks), len(to_delete)
                 )
             )
 
             # wait for all of the reminders to be sent
             asyncio.gather(*tasks)
-            logging.debug("reme.py:bootstrap- All reminders have been sent")
                 
             # remove entries that have already been executed
             if len(to_delete):
                 await self.remove_entries(to_delete)
-                logging.debug("remi.py:reminder_loop - {} entries have been removed".format(
-                    len(to_delete))
-                )
+                logging.debug("reme.py:reminder_loop - {len(to_delete)} entries have been removed")
+                logging.debug("reme.py:reminder_loop - All reminders have been sent")
 
-            logging.debug("remei.py:reminder_loop - Sleeping for 60 seconds")
+            logging.debug("reme.py:reminder_loop - Sleeping for 60 seconds")
             await asyncio.sleep(60)
 
     # end reminder_loop
@@ -221,15 +218,25 @@ class Reme(discord.Client):
         :param entry.Entry
         """
         ids: list = entry.users_from_string(ent.users) 
+        template: str = f"""
+        This is an automated reminder :kissing_heart:
 
-        for id in ids:
-            user: discord.User = self.get_user(id)
-            await user.send(ent.msg)
+        **Message:** {ent.msg}
+
+        **From:** {self.get_user(ids[0]).name}
+        """
+
+        if ent.everyone:
+            await self.get_channel(ent.channel).send(template)
             logging.debug(
-                "reme.py:send_reminders - A reminder for entry: {} has been sent to {}".format(
-                    ent.uid, id
-                )
+                f"reme.py:send_reminders - A reminder for entry: {ent.uid} has been sent to the channel: {ent.channel}"
             )
+
+        else:
+            for id in ids:
+                user: discord.User = self.get_user(id)
+                await user.send(template)
+                logging.debug(f"reme.py:send_reminders - A reminder for entry: {ent.uid} has been sent to {id}")
 
     # end send_message
 
@@ -286,6 +293,8 @@ class Reme(discord.Client):
     ## Discord.py Events
     ###########################################################################
 
+    # TODO Sleep the reminder_loop task if disconnected from discord
+
     async def on_ready(self):
         logging.info(
             'Reme has logged on to the server as {0.user}'.format(self)
@@ -332,10 +341,7 @@ class Reme(discord.Client):
                     self.db.add_entry(ent)
 
                 await message.author.send(
-                    "Got your message {}. I will remind you at {}".format(
-                        message.author,
-                        ent.executed
-                    )
+                    f"Got your message {message.author.name}. I will send the reminder at {ent.executed}"
                 )
 
 # end Reme class

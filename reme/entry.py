@@ -7,7 +7,7 @@ discord.Message.
 """
 
 from datetime import datetime, timedelta
-from discord import Member, Message  # , User
+from discord import Member, Message
 import logging
 import re
 
@@ -24,26 +24,28 @@ class Entry:
     )
 
     def __init__(self, uid=None, msg="", users=None, channel=None, created=None, 
-                executed=None):
+                executed=None, everyone=0):
         self.uid = uid
         self.msg = msg
         self.users = users
         self.channel = channel
         self.created = created
         self.executed = executed
+        self.everyone = everyone
 
     # end __init__
 
 
     def __str__(self):
-        return """
-        uid         : {}
-        msg         : {}
-        users       : {}
-        channel     : {}
-        created     : {}
-        executed    : {}
-        """.format(self.uid, self.msg, self.users, self.channel, self.created, self.executed)
+        return f"""
+        uid         : {self.uid}
+        msg         : {self.msg}
+        users       : {self.users}
+        channel     : {self.channel}
+        created     : {self.created}
+        executed    : {self.executed}
+        everyone    : {bool(self.everyone)}
+        """
 
     # end __str__
 
@@ -65,9 +67,10 @@ def from_msg(message: Message) -> Entry:
     if matches:
         ent.msg = matches.group('message')
         ent.users = users_to_string(message) 
-        ent.channel = message.channel
+        ent.channel = message.channel.id
         ent.created = datetime.now()
         ent.executed = convert_date(matches)
+        ent.everyone = message.mention_everyone
 
         logging.debug(
             "entry.py:from_msg - Entry created from message successfully | {}".format(ent)
@@ -125,17 +128,16 @@ def from_db(sql_output: tuple) -> Entry:
     :param sql_output tuple - A tuple representation of a row in the DB
     :return Entry or None
     """
-    logging.debug(
-        "entry.py:from_db - Attempting to create an Entry object from DB \
-        output row={}".format(sql_output[0])
-    )
+    logging.debug(f"entry.py:from_db - Attempting to create an Entry object from DB with entry: {sql_output[0]}")
 
     return Entry(
         uid=sql_output[0],
         msg=sql_output[1],
         users=sql_output[2],
-        created=sql_output[3],
-        executed=sql_output[4]
+        channel=sql_output[3],
+        created=sql_output[4],
+        executed=sql_output[5],
+        everyone=sql_output[6]
     )
 
 # end from_db
@@ -153,7 +155,7 @@ def users_to_string(message: Message) -> str:
     for m in message.mentions:
         users += ",{}".format(m.id)
 
-    logging.debug("entry:users_to_string - Users string generated {}".format(users))
+    logging.debug(f"entry:users_to_string - Users string generated {users}")
     return users
 
 # end users_to_string
