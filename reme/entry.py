@@ -69,10 +69,8 @@ def from_msg(message: Message) -> Entry:
         ent.created = datetime.now()
         ent.executed = convert_date(matches)
 
-        print(message.author.id)
-
-        logging.info(
-            "entry.py:from_msg - Entry created from message successfully"
+        logging.debug(
+            "entry.py:from_msg - Entry created from message successfully | {}".format(ent)
         )
         return ent
 
@@ -102,7 +100,7 @@ def convert_date(matches: re.Match) -> datetime:
         converted_date = converted_date.replace(hour=int(matches.group('hour')))
         converted_date = converted_date.replace(minute=int(matches.group('min')))
 
-    # TODO: Fix this; seems to convert everything to minutes instead of respecting
+    #TODO: Fix this; seems to convert everything to minutes instead of respecting
     #       day||hour indicator
     if matches.group('offset'):
         # Match the given offset unit and adjust the time
@@ -144,20 +142,6 @@ def from_db(sql_output: tuple) -> Entry:
 # end from_db
 
 
-# TODO might not need to do this; use user = client.get_user(<USER_ID>) to get the user then send them 
-#   the message: https://discordpy.readthedocs.io/en/latest/faq.html#how-do-i-send-a-dm
-#   user.send(msg)
-def to_msg(ent: Entry) -> Message:
-    """
-    Converts an entry object back into a Discord Message object
-    :param Entry
-    :return discord.Message
-    """
-    pass
-
-# end to_msg
-
-
 #TODO Figure out how to handle when @everyone is mentioned
 def users_to_string(message: Message) -> str:
     """
@@ -170,7 +154,7 @@ def users_to_string(message: Message) -> str:
     for m in message.mentions:
         users += ",{}".format(m.id)
 
-    logging.info("entry:users_to_string - Users string generated {}".format(users))
+    logging.debug("entry:users_to_string - Users string generated {}".format(users))
     return users
 
 # end users_to_string

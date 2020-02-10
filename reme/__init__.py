@@ -1,39 +1,31 @@
 #!/usr/bin/env python3
 
+# TODO
+# add clap
+# add argument for log level
+# add arguement for log file
+# add argument for starting a demo for performance metrics
+# add argument for setting a database file path
+# add a clean option to remove old entries from the database
+# move most of the setup to functions in reme.py
+
 import reme 
 import discord
 import logging
 import asyncio
+from datetime import datetime
 
-def main():
+async def main():
     # set log level
     logging.basicConfig()
-    logging.getLogger().setLevel(logging.INFO)
+    logging.getLogger().setLevel(logging.DEBUG)
+    logging.getLogger("discord").setLevel(logging.INFO)
+    logging.getLogger("discord.client").setLevel(logging.WARNING)
+    logging.getLogger("discord.gateway").setLevel(logging.WARNING)
+    logging.getLogger("websockets").setLevel(logging.WARNING)
 
-    # connect to discord and start the event loop
-    try:
-        bot = reme.Reme()
-        bot.set_token()
-        bot.set_db()
-        bot.run(bot.token)
-
-        # TODO fill out the logic
-        while True:
-            entries: list = bot.get_entries()
-
-            for e in entries:
-                pass
-                #msg: discord.Message =
-
-    except discord.errors.LoginFailure:
-        logging.error(
-            "__init__.py:main - Invalid token passed to discord client"
-        )
-        exit(2)
-    except Exception as e:
-        logging.error(
-            "__init__.py:main - An error occurred. {}".format(e)
-        )
+    bot = reme.Reme()
+    await bot.bootstrap()
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

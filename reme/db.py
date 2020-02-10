@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 """
 db.py
 This handels the interaction between reme and the database. It can convert
@@ -17,6 +18,8 @@ from entry import Entry, from_db
 # Add try blocks to all DB functions
 # Add error recovery to all functions
 # Add logging to all transactions
+# Add a clean function that will remove entries that should have been executed
+#   before the current timestamp
 ##############################################################################
 
 
@@ -25,16 +28,27 @@ class DB:
     An object that handels interaction between reme and the DB
     """
 
-    def __init__(self):
-        logging.info(
-            "db.py:__init__ - Attempting to establish a connection to the DB"
-        )
-        self.connection = sqlite3.connect('reme.db')
-        logging.info("db.py:__init__ - Connection established to DB")
+    def __init__(self, db_path='reme.db'):
+        try: 
+            logging.debug(
+                "db.py:__init__ - Attempting to establish a connection to the DB"
+            )
+            self.connection = sqlite3.connect(
+                db_path, 
+                detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES
+            )
+            logging.debug("db.py:__init__ - Connection established to DB")
+            self.make_table()
 
-        self.make_table()
+        # TODO do better error handeling than this
+        except Exception as e:
+            logging.error("db.py:__init__ - {}".format(e))
+            exit(3)
 
-    def make_table(self) -> bool:
+    # end __init__
+
+
+    def make_table(self):
         """
         Creates the entry table if it does not already exist
         """
@@ -44,7 +58,7 @@ class DB:
                 and name not like 'sqlite_%';"):
 
                 if 'entries' in row:
-                    logging.info(
+                    logging.debug(
                         "db.py:make_table - Entries table already exists"
                     )
                     return True
@@ -73,7 +87,7 @@ class DB:
                 create the entries table. Table might already exist"
             )
 
-        logging.info("db.py:make_table - New entries table created")
+        logging.debug("db.py:make_table - New entries table created")
         return True
 
     def add_entry(self, entry: Entry) -> bool:
@@ -81,76 +95,112 @@ class DB:
         Insert an Entry object into the DB
         """
         try:
-            self.connection.execute(
+            d gf(e(nncc
                 """
-                INSERT INTO entries(msg, users, created, executed)
+                INSERT INTO entr
                 VALUES(?, ?, ?, ?);
                 """,
                 (entry.msg, entry.users, entry.created, entry.executed)
             )
             self.connection.commit()
 
-        except sqlite3.Warning:
-            logging.error("db.py:add_entry - Failed to add an entry to the DB")
+        except sqlite3.Warning as e:
+            logging.error("db.py:add_entry - Failed to add an entry to the DB | {}".format(e))
             return False
+        except Exception as e:
+            logging.error("db.py:add_entry - An unknown error occured | {}".format(e))
 
-        logging.info("db.py:add_entry - Added an entry to the DB")
+        logging.debug("db.py:add_entry - Added an entry to the DB")
         return True
+
+    # end add_entry
+
 
     def close(self) -> bool:
         """
         Commits changes to the DB and closes the connection
-        TODO:
-        Add error handeling and error logging
         """
-        logging.info(
+        # TODO:
+        # Add error handeling and error logging
+        logging.debug(
             "db.py:close - Starting to close the connection to the DB"
         )
         try:
             self.connection.commit()
-            logging.info("db.py:close - Commited transactions to the DB")
+            logging.debug("db.py:close - Commited transactions to the DB")
             self.connection.close()
-            logging.info("db.py:close - Connection to the DB has closed")
+            logging.debug("db.py:close - Connection to the DB has closed")
 
-        except sqlite3.Warning:
-            logging.info(
+        except sqlite3.Warning as e:
+            logging.error(
                 "db.py:close - Error occured while trying to close the \
-                connection to the DB"
+                connection to the DB | {}".format(e)
             )
             return False
 
         return True
 
-    def collect(self, timestamp: datetime) -> list:
+    def collect(self, time: datetime) -> list:
         """
         Collects the entries from the DB
         :param timestamp datetime.datetime: A datetime to compare against the
         executed column
         :return list - The DB entries that match the given datetime
         """
-        logging.info(
-            "db.py:collect - Collecting entries from the DB \
-            with timestamp {}".format(timestamp)
+        logging.debug(
+            "db.py:collect - Collecting entries from the DB with datetime {}".format(time)
         )
         try:
-            return [row for row in self.connection.execute(
-                "SELECT * FROM entries WHERE executed=?", timestamp)]
-        except sqlite3.Warning:
+            # TODO it doesn't like datetimes or isofmt string; broken
+            entries: list = [from_db(row) for row in self.connection.execute(
+                'SELECT * FROM entries WHERE executed=?;', time
+                )
+            ]
+
+            logging.debug(
+                "db.py:collect - {} entries found with datetime {}".format(
+                    len(entries), time
+                )
+            )
+
+            return entries
+
+        except sqlite3.Warning as e:
             logging.error(
-                "db.py:collect - Failed to retrieve entries from the DB"
+                "db.py:collect - Failed to retrieve entries from the DB for \
+                    datetime {} | {}".format(time, e)
+            )
+            return []
+        except Exception as e:
+            logging.error(
+                "db.py:collect - An unknown error occured | {}".format(e)
             )
             return []
 
-    def remove(self, uid: int) -> bool:
+    # end collect
+
+
+    def commit(self):
+        """
+        Commit the database and log the results
+        """
+        try:
+            self.connection.commit()
+            logging.debug("db.py:commit - Transactions have been commited to the database")
+        
+        except sqlite3.Warning as e:
+            logging.error(
+                "db.py:commit - An error occured while trying to commit \
+                transactions to the database | {}".format(e)
+            )
+
+    def remove(self, uid: int):
         """
         Remove entries from the DB
         """
-        print("Removing entry with uid: {}".format(uid))
         try:
-            logging.info(
-                "db.py:remove - Attempting to remove row with UID: {}".format(
-                    uid
-                )
+            logging.debug(
+                "db.py:remove - Attempting to remove row with UID: {}".format(uid)
             )
             self.connection.execute(
                 "delete from entries where uid=?;",
@@ -159,22 +209,26 @@ class DB:
 
         except sqlite3.Warning:
             logging.error(
-                "db.py:remove - Failed to remove row with UID: {}".format(
-                    uid
-                )
+                "db.py:remove - Failed to remove row with UID: {}".format(uid)
             )
-            return False
+            return
 
-        return True
+        logging.debug(
+            "db.py:remove - Entry with UID: {} has been removed".format(uid)
+        )
 
+    # end remove
+
+
+    #TODO update to match the current schema 
+    #TODO add performance metrics
     def gen_demo(self):
         """
         Creates dummy entries in the DB for testing purposes
         """
 
-        # Create current time and floor to the given minute
-        created = datetime.now()
-        created.replace(second=0, microsecond=0)
+        # Create current time and floored to the given minute
+        created = datetime.now().replace(second=0, microsecond=0)
 
         entries = [
             ("Take pizza out of oven", "Jason", created, created + timedelta(minutes=1)),
