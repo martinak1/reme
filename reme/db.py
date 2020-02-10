@@ -95,9 +95,9 @@ class DB:
         Insert an Entry object into the DB
         """
         try:
-            d gf(e(nncc
+            self.connection.execute(
                 """
-                INSERT INTO entr
+                INSERT INTO entries(msg, users, created, executed)
                 VALUES(?, ?, ?, ?);
                 """,
                 (entry.msg, entry.users, entry.created, entry.executed)
@@ -150,12 +150,13 @@ class DB:
         logging.debug(
             "db.py:collect - Collecting entries from the DB with datetime {}".format(time)
         )
+
+        sql: str = f"SELECT * FROM entries WHERE executed='{time}'"
         try:
             # TODO it doesn't like datetimes or isofmt string; broken
             entries: list = [from_db(row) for row in self.connection.execute(
-                'SELECT * FROM entries WHERE executed=?;', time
-                )
-            ]
+                sql
+            )]
 
             logging.debug(
                 "db.py:collect - {} entries found with datetime {}".format(
@@ -164,6 +165,16 @@ class DB:
             )
 
             return entries
+
+        except sqlite3.ProgrammingError as e:
+            logging.error(
+                "db.py:collect - There was an issue with the SQL statement | {}".format(e)
+            )
+
+        except sqlite3.DatabaseError as e:
+            logging.error(
+                "db.py:collect - There was an issue with the Database | {}".format(e)
+            )
 
         except sqlite3.Warning as e:
             logging.error(
@@ -198,20 +209,23 @@ class DB:
         """
         Remove entries from the DB
         """
+        sql: str = f"DELETE FROM entries WHERE uid={uid}"
         try:
             logging.debug(
                 "db.py:remove - Attempting to remove row with UID: {}".format(uid)
             )
-            self.connection.execute(
-                "delete from entries where uid=?;",
-                uid
-            )
+            self.connection.execute(sql)
 
-        except sqlite3.Warning:
+        except sqlite3.Warning as e:
             logging.error(
-                "db.py:remove - Failed to remove row with UID: {}".format(uid)
+                "db.py:remove - Failed to remove row with UID: {} | {}".format(uid, e)
             )
             return
+
+        except Exception as e:
+            logging.error(
+                "db.py:remove - An unkown error occured while removing entry with UID: {} | {}".format(uid, e)
+            )
 
         logging.debug(
             "db.py:remove - Entry with UID: {} has been removed".format(uid)

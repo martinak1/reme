@@ -134,9 +134,8 @@ def from_db(sql_output: tuple) -> Entry:
         uid=sql_output[0],
         msg=sql_output[1],
         users=sql_output[2],
-        channel=sql_output[3],
-        created=sql_output[4],
-        executed=sql_output[5]
+        created=sql_output[3],
+        executed=sql_output[4]
     )
 
 # end from_db

@@ -154,7 +154,7 @@ class Reme(discord.Client):
 
         # wait for connection to discord to be established
         await self.on_ready()
-        await asyncio.sleep(10)
+        await asyncio.sleep(5)
 
         while True:
             logging.debug("reme.py:bootstrap - Starting reminder loop")
@@ -162,7 +162,7 @@ class Reme(discord.Client):
                 datetime.now().replace(second=0, microsecond=0)
             )
             logging.debug("reme.py:reminder_loop - Collected {} entries".format(len(entries)))
-            to_delete:  list = []
+            to_delete: list = []
             tasks: list = []
 
             for e in entries:
@@ -205,7 +205,7 @@ class Reme(discord.Client):
             logging.debug("reme.py:remove_entries - Aquired database lock")
 
             for e in entries:
-                self.db.remove(e.uid)
+                self.db.remove(e)
 
             self.db.commit()
 
@@ -214,20 +214,20 @@ class Reme(discord.Client):
     # end remove_entries
 
 
-    async def send_reminders(self, entry: entry.Entry):
+    async def send_reminders(self, ent: entry.Entry):
         # TODO make this asyncronus; no need to wait for one message to be sent to send the rest
         """
         Sends a reminder to the specified users
         :param entry.Entry
         """
-        ids: list = entry.users_from_string(entry.users) 
+        ids: list = entry.users_from_string(ent.users) 
 
         for id in ids:
             user: discord.User = self.get_user(id)
-            await user.send(entry.msg)
+            await user.send(ent.msg)
             logging.debug(
                 "reme.py:send_reminders - A reminder for entry: {} has been sent to {}".format(
-                    entry.uid, id
+                    ent.uid, id
                 )
             )
 

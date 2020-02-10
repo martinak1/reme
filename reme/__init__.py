@@ -26,6 +26,7 @@ async def main():
 
     bot = reme.Reme()
     await bot.bootstrap()
+    bot.close()
 
 if __name__ == "__main__":
     asyncio.run(main())
