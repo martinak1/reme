@@ -18,7 +18,7 @@ from datetime import datetime
 async def main():
     # set log level
     logging.basicConfig()
-    logging.getLogger().setLevel(logging.DEBUG)
+    logging.getLogger().setLevel(logging.INFO)
     logging.getLogger("discord").setLevel(logging.INFO)
     logging.getLogger("discord.client").setLevel(logging.WARNING)
     logging.getLogger("discord.gateway").setLevel(logging.WARNING)
@@ -26,7 +26,16 @@ async def main():
 
     bot = reme.Reme()
     await bot.bootstrap()
-    bot.close()
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except SystemExit:
+        logging.info("Reme - A SystemExit signal has been received. Exiting!")
+    except RuntimeError as e:
+        logging.error(f"Reme - A RunTimeError occurred | {e}")
+    except KeyboardInterrupt:
+        logging.info("Reme - A KeyboardInterupt signal has been received. Exiting!")
+    except Exception as e:
+        logging.error(f"Reme - An unknown error occurred | {type(e)}: {e}")
+        exit(1)

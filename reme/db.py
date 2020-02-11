@@ -110,7 +110,7 @@ class DB:
             logging.error(f"db.py:add_entry - Failed to add an entry to the DB | {e}")
             return False
         except Exception as e:
-            logging.error(f"db.py:add_entry - An unknown error occurred | {e}")
+            logging.error(f"db.py:add_entry - An unknown error occured | {e}")
             return False
 
         logging.debug("db.py:add_entry - Added an entry to the DB")
@@ -199,25 +199,19 @@ class DB:
         """
         sql: str = f"DELETE FROM entries WHERE uid={uid}"
         try:
-            logging.debug(
-                "db.py:remove - Attempting to remove row with UID: {}".format(uid)
-            )
+            logging.debug(f"db.py:remove - Attempting to remove row with UID: {uid}")
             self.connection.execute(sql)
 
         except sqlite3.Warning as e:
+            logging.error(f"db.py:remove - Failed to remove row with UID: {uid} | {e}")
+            return
+        except Exception as e:
             logging.error(
-                "db.py:remove - Failed to remove row with UID: {} | {}".format(uid, e)
+                f"db.py:remove - An unknown error occurred while removing entry with UID: {uid} | {e}"
             )
             return
 
-        except Exception as e:
-            logging.error(
-                "db.py:remove - An unkown error occured while removing entry with UID: {} | {}".format(uid, e)
-            )
-
-        logging.debug(
-            "db.py:remove - Entry with UID: {} has been removed".format(uid)
-        )
+        logging.debug(f"db.py:remove - Entry with UID: {uid} has been removed")
 
     # end remove
 

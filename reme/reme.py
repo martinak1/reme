@@ -49,35 +49,40 @@ class Reme(discord.Client):
 
             # Create a task for the reminder logic loop coro
             reminder_coro: asyncio.Task = asyncio.create_task(self.reminder_loop())
-            logging.debug("reme.py:bootstrap - Reme.bootsrap task has been created")
+            logging.debug("reme.py:bootstrap - reme.reminder_loop task has been created")
 
             await asyncio.gather(discord_coro, reminder_coro)
 
         except discord.errors.LoginFailure as e:
-            logging.error(
-              "reme:bootstrap - Unable to login to Discord | {}".format(e)
-            )
-            exit(2)
+            logging.error("reme:bootstrap - Unable to login to Discord | {e}")
         except discord.errors.ClientException as e:
-            logging.error(
-              "reme:bootstrap - Unable to login to Discord | {}".format(e)
-            )
-            exit(5)
+            logging.error("reme:bootstrap - Unable to login to Discord | {e}")
         except discord.errors.DiscordException as e:
-            logging.error(
-              "reme:bootstrap - Unable to login to Discord | {}".format(e)
-            )
-            exit(5)
+            logging.error("reme:bootstrap - Unable to login to Discord | {e}")
+        except KeyboardInterrupt as e:
+            logging.debug(f"reme.py:bootstrap - A keyboard interupt has been received | {e}")
+        except SystemExit as e:
+            logging.debug(f"reme.py:bootstrap - A SystemExit signal has been received | {e}")
         except asyncio.CancelledError as e:
-            logging.error(
-                "reme.py:bootstrap - An asyncio exception was thrown | {}".format(e)
-            )
-            exit(6)
+            logging.debug(f"reme.py:bootstrap - An asyncio task was canceled prematurely | {e}")
         except Exception as e:
-            logging.error(
-                "reme:bootstrap- An error occurred | {}".format(e)
-            )
-            exit(4)
+            logging.error(f"reme.py:bootstrap- An error unknown occurred | {type(e)}: {e}")
+
+        finally:
+            reminder_coro.cancel()
+            logging.debug("reme.py:bootstrap - The reme.reminder_loop task has been canceled")
+            discord_coro.cancel()
+            logging.debug("reme.py:bootstrap - The discord.Client.start task has been canceled")
+            logging.info("Reme - Prepairing to close reme")
+            await self.close_db()
+            logging.info("Reme - Connection to the DB has been closed")
+            #discord.client._cancel_tasks(self.loop)
+            #logging.debug("reme.py:bootstrap - All tasks in the event loop have been canceled")
+            #await self.loop.stop()
+            #while self.loop.is_running():
+                #logging.debug("reme.py:bootstrap - Waiting from event loop to finish")
+            #logging.info("reme.py:bootstrap - The event loop has been stopped")
+            #await self.close()
 
     # end bootstrap
 
@@ -125,11 +130,10 @@ class Reme(discord.Client):
     # end help
 
 
-    # TODO make async
     async def get_entries(self, time: datetime) -> list:
         """
-        Checks the DB for upcoming execution times and returns a list of entries that need to be sent
-        :return list || None
+        A coroutine that checks the DB for upcoming execution times and returns a list of entries that need to be sent
+        :return list
         """
         entries: list = ()
         logging.debug("reme:get_entries - Collecting entries to be executed at {}".format(time))
@@ -151,10 +155,8 @@ class Reme(discord.Client):
         """
         
         """
-
         # wait for connection to discord to be established
-        await self.on_ready()
-        await asyncio.sleep(5)
+        await self.wait_until_ready()
 
         while True:
             logging.debug("reme.py:reminder_loop - Starting reminder loop")
@@ -165,31 +167,32 @@ class Reme(discord.Client):
             to_delete: list = []
             tasks: list = []
 
-            for e in entries:
+            if entries:
+                for e in entries:
+                    logging.debug(
+                        f"reme:reminder_loop - Creating a task for entry with UID: {e.uid} then pending it for deletion"
+                    )
+                    tasks.append(asyncio.create_task(self.send_reminders(e)))
+                    to_delete.append(e.uid)
+
                 logging.debug(
-                    f"reme:reminder_loop - Creating a task for entry with UID: {e.uid} then pending it for deletion"
+                    "reme:reminder_loop - {} tasks created and {} entries pending deletion".format(
+                        len(tasks), len(to_delete)
+                    )
                 )
-                tasks.append(asyncio.create_task(self.send_reminders(e)))
-                to_delete.append(e.uid)
 
-            logging.debug(
-                "reme:reminder_loop - {} tasks created and {} entries pending deletion".format(
-                    len(tasks), len(to_delete)
-                )
-            )
-
-            # wait for all of the reminders to be sent
-            asyncio.gather(*tasks)
+                # wait for all of the reminders to be sent
+                asyncio.gather(*tasks)
                 
-            # remove entries that have already been executed
-            if len(to_delete):
-                await self.remove_entries(to_delete)
-                logging.debug("reme.py:reminder_loop - {len(to_delete)} entries have been removed")
-                logging.debug("reme.py:reminder_loop - All reminders have been sent")
+                # remove entries that have already been executed
+                if len(to_delete):
+                    await self.remove_entries(to_delete)
+                    logging.debug(f"reme.py:reminder_loop - {len(to_delete)} entries have been removed")
+                    logging.debug("reme.py:reminder_loop - All reminders have been sent")
 
             logging.debug("reme.py:reminder_loop - Sleeping for 60 seconds")
             await asyncio.sleep(60)
-
+        
     # end reminder_loop
 
 
@@ -240,10 +243,23 @@ class Reme(discord.Client):
 
     # end send_message
 
+    async def close_db(self):
+        """
+        Close the connection to the database
+        """
+        async with self.db_lock:
+            logging.debug("reme.py:close_db - Acquired the DB lock")
+            self.db.close()
+
+        logging.debug("reme.py:close_db - Released the DB lock")
+        logging.debug("reme.py:close_db - The connection to the DB has been closed")
+
+    # end close_db
+
 
     def connect_to_db(self):
         """
-        Initialize a connection to the database and wraps it in a mutex lock
+        Initialize a connection to the database and initialize a mutex lock
         """
         # Don't know if I could just make this one line. I think if I did it 
         # like self.db = asyncio.Lock(*DB()), the DB object would fall out of scope
@@ -296,9 +312,7 @@ class Reme(discord.Client):
     # TODO Sleep the reminder_loop task if disconnected from discord
 
     async def on_ready(self):
-        logging.info(
-            'Reme has logged on to the server as {0.user}'.format(self)
-        )
+        logging.info(f"Reme has logged on to the server as {self.user}")
 
 
     async def on_connect(self):
