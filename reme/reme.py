@@ -15,9 +15,9 @@ A Discord bot that reminds you of things.
 """
 
 import asyncio
-from db import DB
+from reme.db import DB
 import discord
-import entry
+import reme.entry as entry
 import logging
 import os
 import re
@@ -69,6 +69,7 @@ class Reme(discord.Client):
             logging.error(f"reme.py:bootstrap- An error unknown occurred | {type(e)}: {e}")
 
         finally:
+            if reminder_coro.
             reminder_coro.cancel()
             logging.debug("reme.py:bootstrap - The reme.reminder_loop task has been canceled")
             discord_coro.cancel()
@@ -339,10 +340,8 @@ class Reme(discord.Client):
             if ent:
                 await message.author.send('Reme Debug {}'.format(ent))
             else:
-                await message.channel.send(
-                    'Message was not in the correct format. This is what you sent me: \n{}'
-                    .format(message.content)
-                )
+                await message.author.send('Message was not in the correct format. This is what you sent me: \n{message.content}')
+                await message.author.send("{help()}")
         # Print the help docstring
         elif message.content.startswith('!reme -h') or message.content.startswith('!reme help'):
             await message.channel.send("{}".format(self.help()))
@@ -357,5 +356,8 @@ class Reme(discord.Client):
                 await message.author.send(
                     f"Got your message {message.author.name}. I will send the reminder at {ent.executed}"
                 )
+            else:
+                await message.author.send('Message was not in the correct format. This is what you sent me: \n{message.content}')
+                await message.author.send("{help()}")
 
 # end Reme class

@@ -9,7 +9,7 @@ Entry objects to SQL statements and vice versa.
 import sqlite3
 import logging
 from datetime import datetime, timedelta
-from entry import Entry, from_db
+from reme.entry import Entry, from_db
 # import threading
 # import time
 

@@ -10,10 +10,9 @@
 # move most of the setup to functions in reme.py
 
 from reme.reme import Reme
-import discord
 import logging
 import asyncio
-from datetime import datetime
+import argparse
 
 async def main():
     # set log level
@@ -28,6 +27,26 @@ async def main():
     await bot.bootstrap()
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-l", "--log", 
+        help="the path where the log file should be saved",
+        default=None
+    )
+    parser.add_argument(
+        "-lv", "--log-level", 
+        help="changes the level of detail in the log", 
+        choices=["info", "debug", "warning", "error"],
+        default="info"
+    )
+    parser.add_argument(
+        "-t", "--token", 
+        help="the path to the token file",
+        default=None
+    )
+
+    args = parser.parse_args()
+
     try:
         asyncio.run(main())
     except SystemExit:
