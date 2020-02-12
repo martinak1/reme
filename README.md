@@ -1,9 +1,7 @@
 # Reme - A Discord bot that will send you reminders
-    
-    Author: martinak1
-    Source: https://github.com/martinak1/reme
-    License: BSD-3-Clause
 
+![PyPI - License](https://img.shields.io/pypi/l/reme) ![PyPI](https://img.shields.io/pypi/v/reme) ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/reme)
+    
 ## NOTE: Reme uses a 24 hour clock in order to simplify datetimes
 
 ## Flags
@@ -34,3 +32,6 @@
 
     !reme DND Session @ 10/30 16:30
     
+## Install
+
+    $ /usr/bin/env python3 -m pip install reme
