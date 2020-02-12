@@ -130,13 +130,13 @@ class DB:
         )
         try:
             self.connection.commit()
-            logging.debug("db.py:close - Commited transactions to the DB")
+            logging.debug("db.py:close - Committed transactions to the DB")
             self.connection.close()
             logging.debug("db.py:close - Connection to the DB has closed")
 
         except sqlite3.Warning as e:
             logging.error(
-                "db.py:close - Error occured while trying to close the \
+                "db.py:close - Error occurred while trying to close the \
                 connection to the DB | {}".format(e)
             )
             return False
