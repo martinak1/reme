@@ -15,9 +15,9 @@ A Discord bot that reminds you of things.
 """
 
 import asyncio
-from reme.db import DB
+from db import DB
 import discord
-import reme.entry as entry
+import entry as entry
 import logging
 import os
 import re
@@ -34,21 +34,28 @@ class Reme(discord.Client):
     # The bot token id needed to authenticate on discord
     token: str = None
 
-    async def bootstrap(self):
+    async def bootstrap(self, database: str = None, token: str = None):
         """
         Starts the logic loop for retrieving and sending reminders
+        :param database: str - The path to the database
+        :param token: str - the path to the token file
         """
+        # setting these to None prevents the UnboundLocalError from being thrown
+        # if the program closes before the coroutines are made. 
+        discord_coro: asyncio.Task = None
+        reminder_coro: asyncio.Task = None
+
         # connect to discord and start the event loops
         try:
-            self.set_token()
-            self.connect_to_db()
+            self.set_token(token)
+            self.connect_to_db(database)
 
             # Create a task for the discord.Client.run coro
-            discord_coro: asyncio.Task = asyncio.create_task(self.start(self.token))
+            discord_coro = asyncio.create_task(self.start(self.token))
             logging.debug("reme.py:bootstrap - discord.Client.start task has been created")
 
             # Create a task for the reminder logic loop coro
-            reminder_coro: asyncio.Task = asyncio.create_task(self.reminder_loop())
+            reminder_coro = asyncio.create_task(self.reminder_loop())
             logging.debug("reme.py:bootstrap - reme.reminder_loop task has been created")
 
             await asyncio.gather(discord_coro, reminder_coro)
@@ -69,21 +76,15 @@ class Reme(discord.Client):
             logging.error(f"reme.py:bootstrap- An error unknown occurred | {type(e)}: {e}")
 
         finally:
-            if reminder_coro.
-            reminder_coro.cancel()
-            logging.debug("reme.py:bootstrap - The reme.reminder_loop task has been canceled")
-            discord_coro.cancel()
-            logging.debug("reme.py:bootstrap - The discord.Client.start task has been canceled")
+            if reminder_coro and not reminder_coro.cancelled():
+                reminder_coro.cancel()
+                logging.debug("reme.py:bootstrap - The reme.reminder_loop task has been canceled")
+            if discord_coro and not discord_coro.cancelled():
+                discord_coro.cancel()
+                logging.debug("reme.py:bootstrap - The discord.Client.start task has been canceled")
             logging.info("Reme - Prepairing to close reme")
             await self.close_db()
             logging.info("Reme - Connection to the DB has been closed")
-            #discord.client._cancel_tasks(self.loop)
-            #logging.debug("reme.py:bootstrap - All tasks in the event loop have been canceled")
-            #await self.loop.stop()
-            #while self.loop.is_running():
-                #logging.debug("reme.py:bootstrap - Waiting from event loop to finish")
-            #logging.info("reme.py:bootstrap - The event loop has been stopped")
-            #await self.close()
 
     # end bootstrap
 
@@ -258,38 +259,38 @@ class Reme(discord.Client):
     # end close_db
 
 
-    def connect_to_db(self):
+    def connect_to_db(self, database: str = None):
         """
         Initialize a connection to the database and initialize a mutex lock
         """
         # Don't know if I could just make this one line. I think if I did it 
         # like self.db = asyncio.Lock(*DB()), the DB object would fall out of scope
         # and the pointer would be pointing to garbage data
-        self.db = DB()
+        self.db = DB(db_path=database)
         logging.info("reme.py:connect_to_db - Connection to the database has been established")
 
     # end set_db
 
 
-    def set_token(self):       
+    def set_token(self, token_file):       
         """
         Looks for a REME_TOKEN environment variable or a file named 'token.id' and stores the string value.
         This token allows the bot to login
         """
         #Token filelocation
-        token_file: str = 'token.id'
         token: str = None
 
-        try:
-            token = os.environ['REME_TOKEN'] 
+        if not token_file:
+            try:
+                token = os.environ['REME_TOKEN'] 
 
-        except KeyError:
-            logging.warning(
-                "reme.py:Reme.set_token - REME_TOKEN environment variable not set"
-            )
+            except KeyError:
+                logging.warning(
+                    "reme.py:Reme.set_token - REME_TOKEN environment variable not set"
+                )
 
         # If token environment variable is not set, look for a token file
-        if not token:
+        else:
             try:
                 with open(token_file) as tf:
                     token = tf.readline()

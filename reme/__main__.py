@@ -9,32 +9,50 @@
 # add a clean option to remove old entries from the database
 # move most of the setup to functions in reme.py
 
-from reme.reme import Reme
+from reme import Reme
 import logging
 import asyncio
 import argparse
 
-async def main():
-    # set log level
+def set_log(lvl: str):
+    """
+    Sets the log level based off of what is provided from cli args
+    :param str
+    """
     logging.basicConfig()
-    logging.getLogger().setLevel(logging.INFO)
     logging.getLogger("discord").setLevel(logging.INFO)
     logging.getLogger("discord.client").setLevel(logging.WARNING)
     logging.getLogger("discord.gateway").setLevel(logging.WARNING)
     logging.getLogger("websockets").setLevel(logging.WARNING)
 
+    if lvl == "debug":
+        level = logging.DEBUG
+    elif lvl == "warning":
+        level = logging.WARNING
+    elif lvl == "error":
+        level = logging.ERROR
+    else:
+        level = logging.INFO
+
+    logging.getLogger().setLevel(level)
+    logging.info(f"Reme: The log level has been set to: {lvl}")
+
+# end set_log
+
+async def main(database: str = None, token: str = None):
+    # set log level
     bot = Reme()
-    await bot.bootstrap()
+    await bot.bootstrap(database=database, token=token)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "-l", "--log", 
-        help="the path where the log file should be saved",
-        default=None
+        "-d", "--database",
+        help="the path to the database",
+        default="reme.db"
     )
     parser.add_argument(
-        "-lv", "--log-level", 
+        "-lv", "--level", 
         help="changes the level of detail in the log", 
         choices=["info", "debug", "warning", "error"],
         default="info"
@@ -42,13 +60,14 @@ if __name__ == "__main__":
     parser.add_argument(
         "-t", "--token", 
         help="the path to the token file",
-        default=None
+        default="token.id"
     )
 
     args = parser.parse_args()
+    set_log(args.level)
 
     try:
-        asyncio.run(main())
+        asyncio.run(main(database=args.database, token=args.token))
     except SystemExit:
         logging.info("Reme - A SystemExit signal has been received. Exiting!")
     except RuntimeError as e:

@@ -9,7 +9,7 @@ Entry objects to SQL statements and vice versa.
 import sqlite3
 import logging
 from datetime import datetime, timedelta
-from reme.entry import Entry, from_db
+from entry import Entry, from_db
 # import threading
 # import time
 
@@ -28,7 +28,7 @@ class DB:
     An object that handels interaction between reme and the DB
     """
 
-    def __init__(self, db_path='reme.db'):
+    def __init__(self, db_path):
         try: 
             logging.debug(
                 "db.py:__init__ - Attempting to establish a connection to the DB"
