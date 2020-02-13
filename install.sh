@@ -7,7 +7,7 @@
 #   4 - Pip failed to install the distribution
 
 python="/usr/bin/env python3"
-version=$(grep -Eo -e 'version="(\d+\.\d+\.\d+)"' setup.py | grep -Eo -e '\d+\.\d+\.\d+')
+version=$(egrep -oe 'version="(\d+\.\d+\.\d+)"' setup.py | egrep -oe '\d+\.\d+\.\d+')
 
 echo "Reme Version: ${version}"
 
