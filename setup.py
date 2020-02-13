@@ -21,6 +21,7 @@ setup(
         "License :: OSI Approved :: BSD License",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
         "Intended Audience :: End Users/Desktop",
         "Topic :: Communications :: Chat",
         "Topic :: Games/Entertainment"
