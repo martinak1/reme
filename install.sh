@@ -8,23 +8,10 @@
 #   5 - Unable to set version string
 
 python="/usr/bin/env python3"
-system=$(uname)
+uname=$(uname)
 
-if [[ "${uname}" == "Darwin" ]]; then 
-    version=$(egrep -oe 'version="(\d+\.\d+\.\d+)"' setup.py | egrep -oe '\d+\.\d+\.\d+')
-elif [[ "${uname}" == "Linux" ]]; then
-    version=$(grep setup.py -Poe '(?<=version=")(\d+\.\d+\.\d+)(?=",)')
-else
-    printf "Unexpected OS. Unable to parse version string from setup.py. Build Failed!\n"
-    exit 5
-fi
 
-if [ -z $version ]; then
-    printf "Unable to parse version string. Build Failed!\n"
-    exit 5
-fi
 
-echo "Reme Version: ${version}"
 
 function build () {
     printf "Starting the build process\n"
@@ -48,10 +35,27 @@ function check_dist () {
     fi
 }
 
+function getver () {
+    if [ "${uname}" = "Darwin" ]; then 
+        version=$(egrep -oe 'version="(\d+\.\d+\.\d+)"' setup.py | egrep -oe '\d+\.\d+\.\d+')
+    elif [ "${uname}" = "Linux" ]; then
+        version=$(grep setup.py -Poe '(?<=version=")(\d+\.\d+\.\d+)(?=",)')
+    else
+        printf "Unexpected OS. Unable to parse version string from setup.py. Build Failed!\n"
+        exit 5
+    fi
+
+    if [ -z $version ]; then
+        printf "Unable to parse version string. Build Failed!\n"
+        exit 5
+    fi
+    export $version
+}
+
 function install () {
-    printf "Installing the distribution"
+    printf "Installing the distribution version: ${version}\n"
     # install the produced archive
-    $python -m pip install ./dist/reme-$version.tar.gz
+    $python -m pip install "./dist/reme-${version}.tar.gz"
     ec=$?
     if [ $ec -ne 0 ]; then
         printf "Pip failed to install the distribution with exit code ${ec}. Build Failed!\n"
@@ -64,9 +68,11 @@ if [ -d ./dist ]; then
     rm -rfv ./dist/*
 fi
 
+getver
+printf "Reme Version: ${version}\n"
 # build the distributions
 build
 # test the distributions
 check_dist
 # install the produced archive
-install
+install 
