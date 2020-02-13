@@ -17,6 +17,7 @@ elif [[ "${uname}" == "Linux" ]]; then
 else
     printf "Unexpected OS. Unable to parse version string from setup.py. Build Failed!\n"
     exit 5
+fi
 
 if [ -z $version ]; then
     printf "Unable to parse version string. Build Failed!\n"
