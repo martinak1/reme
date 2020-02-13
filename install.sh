@@ -5,9 +5,23 @@
 #   2 - Twine was unable to run or threw an error
 #   3 - A distribution failed the twine check
 #   4 - Pip failed to install the distribution
+#   5 - Unable to set version string
 
 python="/usr/bin/env python3"
-version=$(egrep -oe 'version="(\d+\.\d+\.\d+)"' setup.py | egrep -oe '\d+\.\d+\.\d+')
+system=$(uname)
+
+if [[ "${uname}" == "Darwin" ]]; then 
+    version=$(egrep -oe 'version="(\d+\.\d+\.\d+)"' setup.py | egrep -oe '\d+\.\d+\.\d+')
+elif [[ "${uname}" == "Linux" ]]; then
+    version=$(grep setup.py -Poe '(?<=version=")(\d+\.\d+\.\d+)(?=",)')
+else
+    printf "Unexpected OS. Unable to parse version string from setup.py. Build Failed!\n"
+    exit 5
+
+if [ -z $version ]; then
+    printf "Unable to parse version string. Build Failed!\n"
+    exit 5
+fi
 
 echo "Reme Version: ${version}"
 
