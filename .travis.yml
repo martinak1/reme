@@ -3,6 +3,6 @@ python:
   - "3.7"
   - "3.8"
 before_install:
-  - pip install --user twine
+  - pip install twine
 install: bash install.sh
 script: python test.py
