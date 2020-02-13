@@ -1,6 +1,6 @@
 # Reme - A Discord bot that will send you reminders
 
-![PyPI - License](https://img.shields.io/pypi/l/reme) ![PyPI](https://img.shields.io/pypi/v/reme) ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/reme)
+![PyPI - License](https://img.shields.io/pypi/l/reme) ![PyPI](https://img.shields.io/pypi/v/reme) ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/reme) ![Travis (.org) branch](https://img.shields.io/travis/martinak1/reme/master?label=master%20build)
     
 ## NOTE: Reme uses a 24 hour clock in order to simplify datetimes
 
