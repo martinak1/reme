@@ -9,7 +9,7 @@ Entry objects to SQL statements and vice versa.
 import sqlite3
 import logging
 from datetime import datetime, timedelta
-from entry import Entry, from_db
+from .entry import Entry, from_db
 # import threading
 # import time
 
@@ -28,7 +28,7 @@ class DB:
     An object that handels interaction between reme and the DB
     """
 
-    def __init__(self, db_path):
+    def __init__(self, db_path: str):
         try: 
             logging.debug(
                 "db.py:__init__ - Attempting to establish a connection to the DB"
@@ -110,7 +110,7 @@ class DB:
             logging.error(f"db.py:add_entry - Failed to add an entry to the DB | {e}")
             return False
         except Exception as e:
-            logging.error(f"db.py:add_entry - An unknown error occured | {e}")
+            logging.error(f"db.py:add_entry - An unknown error occurred | {e}")
             return False
 
         logging.debug("db.py:add_entry - Added an entry to the DB")
@@ -214,32 +214,3 @@ class DB:
         logging.debug(f"db.py:remove - Entry with UID: {uid} has been removed")
 
     # end remove
-
-
-    #TODO update to match the current schema 
-    #TODO add performance metrics
-    def gen_demo(self):
-        """
-        Creates dummy entries in the DB for testing purposes
-        """
-
-        # Create current time and floored to the given minute
-        created = datetime.now().replace(second=0, microsecond=0)
-
-        entries = [
-            ("Take pizza out of oven", "Jason", created, created + timedelta(minutes=1)),
-            ("Go to the store for milk", "Patrick", created, created + timedelta(minutes=2)),
-            ("Do laundry", "Alex", created, created + timedelta(minutes=3)),
-            ("Workout!", "JB", created, created + timedelta(minutes=4)),
-            ("Walk around a little bit", "Alex", created, created + timedelta(minutes=5)),
-            ("Smoke break!", "Alex", created, created + timedelta(minutes=5))
-        ]
-
-        for row in entries:
-            self.connection.execute(
-                """
-                insert into entries(msg, users, attachments, created, executed)
-                values (?, ?, ?, ?, ?);
-                """,
-                row
-            )

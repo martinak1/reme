@@ -15,9 +15,10 @@ A Discord bot that reminds you of things.
 """
 
 import asyncio
-from db import DB
+from . import db 
 import discord
-import entry as entry
+from . import entry
+#from entry import Entry, from_msg, users_from_string
 import logging
 import os
 import re
@@ -27,14 +28,27 @@ class Reme(discord.Client):
     """
     A wrapper class extending discord.client that adds a database connection and stores the bot token
     """
-    # The database object created by db.py
-    db: DB = None
-    # A mutex lock for the db object 
-    db_lock: asyncio.Lock = asyncio.Lock()
-    # The bot token id needed to authenticate on discord
-    token: str = None
 
-    async def bootstrap(self, database: str = None, token: str = None):
+    def __init__(self, d, t, *args, **kwargs):
+        """
+        Initialize a Reme object
+
+        :param d: str - The path to the database
+        :param t: str - The path to the token file
+        """
+        # The bot token id needed to authenticate on discord
+        self.token: str = set_token(t)
+        # A mutex lock for the db object 
+        self.db_lock: asyncio.Lock = asyncio.Lock()
+        # A sqlite3 database that stores entries
+        self.db: db.DB = connect_to_db(d)
+        # let discord.Client handle the reset of the setup
+        super().__init__()
+    
+    # end __init__
+
+
+    async def bootstrap(self): 
         """
         Starts the logic loop for retrieving and sending reminders
         :param database: str - The path to the database
@@ -47,16 +61,15 @@ class Reme(discord.Client):
 
         # connect to discord and start the event loops
         try:
-            self.set_token(token)
-            self.connect_to_db(database)
-
             # Create a task for the discord.Client.run coro
-            discord_coro = asyncio.create_task(self.start(self.token))
+            discord_coro = self.loop.create_task(self.start(self.token))
             logging.debug("reme.py:bootstrap - discord.Client.start task has been created")
+            #logging.debug(f"Discord loop: {discord_coro.loop}")
 
             # Create a task for the reminder logic loop coro
-            reminder_coro = asyncio.create_task(self.reminder_loop())
+            reminder_coro = self.loop.create_task(self.reminder_loop())
             logging.debug("reme.py:bootstrap - reme.reminder_loop task has been created")
+            #logging.debug(f"Reminder loop: {reminder_coro.loop}")
 
             await asyncio.gather(discord_coro, reminder_coro)
 
@@ -73,7 +86,7 @@ class Reme(discord.Client):
         except asyncio.CancelledError as e:
             logging.debug(f"reme.py:bootstrap - An asyncio task was canceled prematurely | {e}")
         except Exception as e:
-            logging.error(f"reme.py:bootstrap- An error unknown occurred | {type(e)}: {e}")
+            logging.error(f"reme.py:bootstrap- An error unexpected occurred | {type(e)}: {e}")
 
         finally:
             if reminder_coro and not reminder_coro.cancelled():
@@ -142,7 +155,7 @@ class Reme(discord.Client):
 
         # get access to the db and collect the entries to be executed at the current datetime
         async with self.db_lock:
-            logging.debug("reme.py:get_entries - Database lock has been aquired")
+            logging.debug("reme.py:get_entries - Database lock has been acquired")
             entries = self.db.collect(time)
 
         logging.debug("reme.py:get_entries - Database lock has been released")
@@ -201,10 +214,10 @@ class Reme(discord.Client):
     async def remove_entries(self, entries: list):
         """
         Removes entries from the database that have already been executed
-        :param list[Entry]
+        :param: list[Entry]
         """
         async with self.db_lock:
-            logging.debug("reme.py:remove_entries - Aquired database lock")
+            logging.debug("reme.py:remove_entries - Acquired database lock")
 
             for e in entries:
                 self.db.remove(e)
@@ -217,7 +230,7 @@ class Reme(discord.Client):
 
 
     async def send_reminders(self, ent: entry.Entry):
-        # TODO make this asyncronus; no need to wait for one message to be sent to send the rest
+        # TODO make this asynchronous; no need to wait for one message to be sent to send the rest
         """
         Sends a reminder to the specified users
         :param entry.Entry
@@ -257,55 +270,6 @@ class Reme(discord.Client):
         logging.debug("reme.py:close_db - The connection to the DB has been closed")
 
     # end close_db
-
-
-    def connect_to_db(self, database: str = None):
-        """
-        Initialize a connection to the database and initialize a mutex lock
-        """
-        # Don't know if I could just make this one line. I think if I did it 
-        # like self.db = asyncio.Lock(*DB()), the DB object would fall out of scope
-        # and the pointer would be pointing to garbage data
-        self.db = DB(db_path=database)
-        logging.info("reme.py:connect_to_db - Connection to the database has been established")
-
-    # end set_db
-
-
-    def set_token(self, token_file):       
-        """
-        Looks for a REME_TOKEN environment variable or a file named 'token.id' and stores the string value.
-        This token allows the bot to login
-        """
-        #Token filelocation
-        token: str = None
-
-        if not token_file:
-            try:
-                token = os.environ['REME_TOKEN'] 
-
-            except KeyError:
-                logging.warning(
-                    "reme.py:Reme.set_token - REME_TOKEN environment variable not set"
-                )
-
-        # If token environment variable is not set, look for a token file
-        else:
-            try:
-                with open(token_file) as tf:
-                    token = tf.readline()
-                    tf.close()
-
-            except FileNotFoundError:
-                logging.error(
-                    "reme.py:Reme.set_token - REME_TOKEN variable is not set and the token file can not be found"
-                )
-                exit(1)
-
-        self.token = token
-
-    # end set_token
-
 
     ###########################################################################
     ## Discord.py Events
@@ -362,3 +326,47 @@ class Reme(discord.Client):
                 await message.author.send("{help()}")
 
 # end Reme class
+
+
+def connect_to_db(d: str):
+    """
+    Initialize a connection to the database
+    """
+    dbase = db.DB(d)
+    logging.info("reme.py:connect_to_db - Connection to the database has been established")
+    return dbase
+
+# end set_db
+
+
+def set_token(token_file: str) -> str:       
+    """
+    Looks for a REME_TOKEN environment variable or a file named 'token.id' and stores the string value.
+    This token allows the bot to login
+    :param: token_file: str - the path to the token file
+    """
+    if not token_file:
+        try:
+            token: str = str(os.environ['REME_TOKEN'])
+
+        except KeyError:
+            logging.warning(
+                "reme.py:Reme.set_token - REME_TOKEN environment variable not set"
+            )
+
+    # If token environment variable is not set, look for a token file
+    else:
+        try:
+            with open(token_file) as tf:
+                token: str = tf.readline().decode('utf-8')
+                tf.close()
+
+        except FileNotFoundError:
+            logging.error(
+                "reme.py:Reme.set_token - REME_TOKEN variable is not set and the token file can not be found"
+            )
+            exit(1)
+
+    return token
+
+# end set_token
