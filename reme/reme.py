@@ -54,6 +54,8 @@ class Reme(discord.Client):
         :param database: str - The path to the database
         :param token: str - the path to the token file
         """
+        logging.debug("reme.py:bootstrap - Starting bootstrap")
+
         # setting these to None prevents the UnboundLocalError from being thrown
         # if the program closes before the coroutines are made. 
         discord_coro: asyncio.Task = None
@@ -74,11 +76,11 @@ class Reme(discord.Client):
             await asyncio.gather(discord_coro, reminder_coro)
 
         except discord.errors.LoginFailure as e:
-            logging.error("reme:bootstrap - Unable to login to Discord | {e}")
+            logging.error(f"reme:bootstrap - Unable to login to Discord | {e}")
         except discord.errors.ClientException as e:
-            logging.error("reme:bootstrap - Unable to login to Discord | {e}")
+            logging.error(f"reme:bootstrap - Unable to login to Discord | {e}")
         except discord.errors.DiscordException as e:
-            logging.error("reme:bootstrap - Unable to login to Discord | {e}")
+            logging.error(f"reme:bootstrap - Unable to login to Discord | {e}")
         except KeyboardInterrupt as e:
             logging.debug(f"reme.py:bootstrap - A keyboard interupt has been received | {e}")
         except SystemExit as e:
@@ -332,8 +334,15 @@ def connect_to_db(d: str):
     """
     Initialize a connection to the database
     """
+    if not d:
+        try: 
+            d = str(os.environ['REME_DB'])
+            logging.debug("reme.py:connect_to_db - REME_DB environment variable is set.")
+        except KeyError:
+            logging.debug("reme.py:connect_to_db - REME_DB environment variable is not set")
+
     dbase = db.DB(d)
-    logging.info("reme.py:connect_to_db - Connection to the database has been established")
+    logging.debug("reme.py:connect_to_db - Connection to the database has been established")
     return dbase
 
 # end set_db
@@ -345,21 +354,21 @@ def set_token(token_file: str) -> str:
     This token allows the bot to login
     :param: token_file: str - the path to the token file
     """
-    if not token_file:
-        try:
-            token: str = str(os.environ['REME_TOKEN'])
+    try:
+        token: str = str(os.environ['REME_TOKEN'])
 
-        except KeyError:
-            logging.warning(
-                "reme.py:Reme.set_token - REME_TOKEN environment variable not set"
-            )
 
-    # If token environment variable is not set, look for a token file
-    else:
+    except KeyError:
+        logging.warning(
+            "reme.py:Reme.set_token - REME_TOKEN environment variable not set"
+        )
+
+        # If token environment variable is not set, look for a token file
         try:
             with open(token_file) as tf:
                 token: str = tf.readline().decode('utf-8')
                 tf.close()
+                logging.debug(f"reme.py:set_token - Token has been set from {token_file}")
 
         except FileNotFoundError:
             logging.error(

@@ -13,6 +13,7 @@ from . import reme
 import logging
 import asyncio
 import argparse
+import os
 
 def set_log(lvl: str):
     """
@@ -24,6 +25,13 @@ def set_log(lvl: str):
     logging.getLogger("discord.client").setLevel(logging.WARNING)
     logging.getLogger("discord.gateway").setLevel(logging.WARNING)
     logging.getLogger("websockets").setLevel(logging.WARNING)
+
+    try:
+        lvl = str(os.environ["REME_LOG"])
+        logging.debug("__main__.py:set_log - REME_LOG environment variable has been used")
+    
+    except KeyError:
+        logging.debug("__main__.py:set_log - REME_LOG environment variable has not been set. Using default value")
 
     if lvl == "debug":
         level = logging.DEBUG
