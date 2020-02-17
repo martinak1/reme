@@ -9,7 +9,7 @@ readme = (cwd / "README.md").read_text()
 
 setup(
     name="reme",
-    version="1.0.2",
+    version="1.0.3",
     description="A Discord bot that reminds you of things",
     long_description=readme,
     long_description_content_type="text/markdown",
